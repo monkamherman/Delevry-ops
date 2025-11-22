@@ -5,17 +5,17 @@
   "description": "description of the projet",
   "repository": {
     "type": "git",
-    "url": "https://github.com/01Barthez/start-react-projet"
+    "url": "https://github.com/monkamherman/Delevry-ops.git"
   },
-  "homepage": "https://github.com/01Barthez/start-react-projet#readme",
-  "readme": "https://github.com/01Barthez/start-react-projet#readme",
+  "homepage": "https://github.com/monkamherman/Delevry-ops.git#readme",
+  "readme": "https://github.com/monkamherman/Delevry-ops.git#readme",
   "bugs": {
-    "url": "https://github.com/01Barthez/start-react-projet/issues"
+    "url": "https://github.com/monkamherman/Delevry-ops.git/issues"
   },
   "author": {
-    "name": "Barthez Kenwou",
-    "email": "kenwoubarthez@gmail.com",
-    "url": "https://github.com/01Barthez"
+    "name": "Herman Moukam",
+    "email": "herman.moukam5@gmail.com",
+    "url": "https://github.com/monkamherman"
   },
   "license": "MIT",
   "main": "index.html",
@@ -27,8 +27,7 @@
   "type": "module",
   "engines": {
     "node": ">=v20.18.1",
-    "yarn": ">=1.22.22",
-    "npm": ">=10.8.2"
+    
   },
   "scripts": {
     "dev": "vite",
