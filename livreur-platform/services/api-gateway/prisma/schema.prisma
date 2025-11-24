@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String         @id @default(auto()) @map("_id") @db.ObjectId
+  firstName         String
+  lastName          String
+  email             String         @unique
+  password          String
+  phoneNumber       String?
+  role              UserRole       @default(CUSTOMER)
+  isActive          Boolean        @default(true)
+  lastLogin         DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  deliveries        Delivery[]     @relation("UserDeliveries")
+  createdDeliveries Delivery[]     @relation("CreatorDeliveries")
+  notifications     Notification[]
+  sessions          Session[]
+}
+
+enum UserRole {
+  ADMIN
+  DELIVERY_PERSON
+  CUSTOMER
+}
+
+model Delivery {
+  id                String             @id @default(auto()) @map("_id") @db.ObjectId
+  clientId          String             @db.ObjectId
+  livreurId         String?            @db.ObjectId
+  status            DeliveryStatus
+  addresses         Address[]
+  optimizedRoute    OptimizedRoute?    @relation(fields: [optimizedRouteId], references: [id])
+  estimatedDuration Int?
+  actualDuration    Int?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  client            User               @relation("UserDeliveries", fields: [clientId], references: [id])
+  livreur           User?              @relation("CreatorDeliveries", fields: [livreurId], references: [id])
+  positions         DeliveryPosition[] @relation("DeliveryPositions")
+  optimizedRouteId  String?            @db.ObjectId
+  deliveryPositions DeliveryPosition[]
+}
+
+model DeliveryPosition {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  deliveryId  String   @db.ObjectId
+  position    Position @relation(fields: [positionId], references: [id])
+  description String?
+  createdAt   DateTime @default(now())
+  delivery    Delivery @relation(fields: [deliveryId], references: [id])
+  positionId  String   @db.ObjectId
+  delivery    Delivery @relation(fields: [deliveryId], references: [id])
+}
+
+enum DeliveryStatus {
+  PENDING
+  IN_PROGRESS
+  DELIVERED
+  CANCELLED
+}
+
+model Address {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  deliveryId String   @db.ObjectId
+  street     String
+  city       String
+  postalCode String
+  country    String
+  position   Position @relation(fields: [positionId], references: [id])
+  delivery   Delivery @relation(fields: [deliveryId], references: [id])
+  positionId String   @db.ObjectId
+}
+
+model Position {
+  id                String             @id @default(auto()) @map("_id") @db.ObjectId
+  lat               Float
+  lng               Float
+  timestamp         DateTime
+  accuracy          Float?
+  deliveryPositions DeliveryPosition[]
+  addresses         Address[]
+  optimizedRoute    OptimizedRoute?    @relation(fields: [optimizedRouteId], references: [id])
+  optimizedRouteId  String?            @db.ObjectId
+}
+
+model OptimizedRoute {
+  id                String      @id @default(auto()) @map("_id") @db.ObjectId
+  waypoints         Position[]
+  totalDistance     Int
+  estimatedDuration Int
+  polyline          String
+  steps             RouteStep[]
+  deliveries        Delivery[]
+}
+
+model RouteStep {
+  id             String         @id @default(auto()) @map("_id") @db.ObjectId
+  routeId        String         @db.ObjectId
+  instruction    String
+  distance       Int
+  duration       Int
+  optimizedRoute OptimizedRoute @relation(fields: [routeId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String   @db.ObjectId
+  refreshToken String
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  user         User     @relation(fields: [userId], references: [id])
+}
