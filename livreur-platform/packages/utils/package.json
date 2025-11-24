@@ -62,8 +62,5 @@
   },
   "peerDependencies": {
     "@livreur/core-types": "^0.1.0"
-  },
-  "files": [
-    "dist"
-  ]
+  }
 }

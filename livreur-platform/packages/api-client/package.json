@@ -1,0 +1,54 @@
+{
+  "name": "@livreur/api-client",
+  "version": "0.1.0",
+  "description": "Client HTTP pour l'API de la plateforme de suivi de livreurs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run lint"
+  },
+  "keywords": [
+    "http",
+    "client",
+    "api",
+    "rest",
+    "typescript"
+  ],
+  "author": "Équipe Livreur <contact@livreur.fr>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/votre-org/livreur-platform.git",
+    "directory": "packages/api-client"
+  },
+  "dependencies": {
+    "@livreur/core-types": "workspace:*",
+    "axios": "^1.6.0",
+    "axios-retry": "^3.6.0",
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "jest": "^29.0.0",
+    "msw": "^2.12.3",
+    "ts-jest": "^29.0.0",
+    "typescript": "^5.0.0",
+    "whatwg-fetch": "^3.6.20"
+  }
+}
