@@ -1,0 +1,26 @@
+{
+  "name": "livreur-platform",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "start:api-gateway": "cd services/api-gateway && bun run start",
+    "dev:api-gateway": "cd services/api-gateway && bun run dev",
+    "build:api-gateway": "cd services/api-gateway && bun run build",
+    "test:api-gateway": "cd services/api-gateway && bun run test",
+    "start:web-client": "cd apps/web-client && bun run dev",
+    "build:web-client": "cd apps/web-client && bun run build",
+    "test:web-client": "cd apps/web-client && bun run test"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "bun": ">=1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
