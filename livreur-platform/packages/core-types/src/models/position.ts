@@ -55,14 +55,32 @@ export function isValidPosition(position: unknown): position is Position {
   
   const pos = position as Partial<Position>;
   
-  return (
-    typeof pos.latitude === 'number' && 
-    typeof pos.longitude === 'number' &&
-    (pos.accuracy === undefined || typeof pos.accuracy === 'number') &&
-    (pos.altitude === undefined || pos.altitude === null || typeof pos.altitude === 'number') &&
-    (pos.speed === undefined || pos.speed === null || typeof pos.speed === 'number') &&
-    (pos.heading === undefined || pos.heading === null || typeof pos.heading === 'number') &&
-    typeof pos.timestamp === 'string' &&
-    !isNaN(new Date(pos.timestamp).getTime())
-  );
+  // Vérification des types de base
+  if (typeof pos.latitude !== 'number' || 
+      typeof pos.longitude !== 'number' ||
+      (pos.accuracy !== undefined && typeof pos.accuracy !== 'number') ||
+      (pos.altitude !== undefined && pos.altitude !== null && typeof pos.altitude !== 'number') ||
+      (pos.speed !== undefined && pos.speed !== null && typeof pos.speed !== 'number') ||
+      (pos.heading !== undefined && pos.heading !== null && typeof pos.heading !== 'number') ||
+      typeof pos.timestamp !== 'string' ||
+      isNaN(new Date(pos.timestamp).getTime())) {
+    return false;
+  }
+
+  // Validation des plages de latitude et longitude
+  if (pos.latitude < -90 || pos.latitude > 90) return false;
+  if (pos.longitude < -180 || pos.longitude > 180) return false;
+
+  // Validation de la précision (doit être positive si définie)
+  if (pos.accuracy !== undefined && pos.accuracy < 0) return false;
+
+  // Validation de la vitesse (doit être positive si définie)
+  if (pos.speed !== undefined && pos.speed !== null && pos.speed < 0) return false;
+
+  // Validation du cap (doit être entre 0 et 360 si défini)
+  if (pos.heading !== undefined && pos.heading !== null && (pos.heading < 0 || pos.heading > 360)) {
+    return false;
+  }
+
+  return true;
 }
