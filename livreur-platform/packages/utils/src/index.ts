@@ -1,3 +1,6 @@
+// Réexportation des types de base
+export type { Position, Coordinates } from '@livreur/core-types';
+
 // Export des utilitaires de géolocalisation
 export * from './geolocation';
 
@@ -6,6 +9,3 @@ export * from './date';
 
 // Export des utilitaires de validation
 export * from './validation';
-
-// Types et interfaces
-export * from '@livreur/core-types';

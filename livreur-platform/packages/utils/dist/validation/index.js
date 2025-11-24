@@ -48,7 +48,7 @@ function isValidEmail(email) {
  */
 function isValidFrenchPhoneNumber(phone) {
     // Format: 06 12 34 56 78 ou +33612345678 ou 0612345678
-    const phoneRegex = /^(\+33|0)[1-9]([-. ]?[0-9]{2}){4}$/;
+    const phoneRegex = /^(\+33|0)[67]([-. ]?[0-9]{2}){4}$/;
     return phoneRegex.test(phone);
 }
 /**

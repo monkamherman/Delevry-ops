@@ -10,13 +10,13 @@ export declare const positionSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     lat: number;
     lng: number;
-    accuracy?: number | undefined;
     timestamp?: Date | undefined;
+    accuracy?: number | undefined;
 }, {
     lat: number;
     lng: number;
-    accuracy?: number | undefined;
     timestamp?: Date | undefined;
+    accuracy?: number | undefined;
 }>;
 /**
  * Valide un objet de type Position

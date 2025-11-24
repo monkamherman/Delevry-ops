@@ -20,5 +20,3 @@ __exportStar(require("./geolocation"), exports);
 __exportStar(require("./date"), exports);
 // Export des utilitaires de validation
 __exportStar(require("./validation"), exports);
-// Types et interfaces
-__exportStar(require("@livreur/core-types"), exports);

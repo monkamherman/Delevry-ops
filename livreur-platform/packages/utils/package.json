@@ -1,9 +1,13 @@
 {
   "name": "@livreur/utils",
-  "version": "0.1.0",
-  "description": "Utilitaires pour la plateforme de suivi de livreurs",
+  "version": "0.2.0",
+  "description": "Utilitaires pour la plateforme de suivi de livreurs en temps réel",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "jest --config=jest.config.js",
@@ -11,17 +15,33 @@
     "test:coverage": "jest --coverage --config=jest.config.js",
     "lint": "eslint src --ext .ts",
     "prepare": "npm run build",
-    "prepublishOnly": "npm test && npm run lint"
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm test",
+    "version": "npm run build && git add -A dist",
+    "postversion": "git push && git push --tags"
   },
   "keywords": [
     "livreur",
     "utils",
     "geolocation",
     "date",
-    "validation"
+    "validation",
+    "typescript"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "Équipe Livreur <contact@livreur.fr>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/votre-org/livreur-platform.git",
+    "directory": "packages/utils"
+  },
+  "bugs": {
+    "url": "https://github.com/votre-org/livreur-platform/issues"
+  },
+  "homepage": "https://github.com/votre-org/livreur-platform/tree/main/packages/utils#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@livreur/core-types": "^0.1.0",
     "date-fns": "^2.30.0",
