@@ -3,103 +3,147 @@ import {
   controller, 
   httpPost, 
   httpGet, 
-  requestParam, 
   httpPut, 
-  httpDelete, 
-  request, 
-  response, 
-  next 
+  httpDelete,
+  BaseHttpController,
+  requestParam,
+  requestBody
 } from 'inversify-express-utils';
-import { Request, Response, NextFunction } from 'express';
+import { Response } from 'express';
+
+// Interface pour la réponse paginée du service utilisateur
+interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// Interface pour les erreurs MongoDB
+interface MongoError extends Error {
+  code?: number;
+  keyPattern?: Record<string, unknown>;
+  keyValue?: Record<string, unknown>;
+}
 import { TYPES } from '../constants/types';
 import { UserService } from '../domain/services/user.service';
 import { 
-  CreateUserDto, 
-  UpdateUserDto, 
   createUserSchema, 
-  updateUserSchema 
+  updateUserSchema,
+  CreateUserDto,
+  UpdateUserDto
 } from '../domain/dtos/user.dto';
 import { validate } from '../middlewares/validation.middleware';
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { UserRole } from '../domain/models/user.model';
 import logger from '../infrastructure/logging/logger';
+import { z } from 'zod';
 
-export const idParamSchema = {
-  id: { in: ['params'], isMongoId: true, errorMessage: 'ID utilisateur invalide' }
-};
+// Schéma de validation pour l'ID
+const idParamSchema = z.object({
+  id: z.string().regex(/^[0-9a-fA-F]{24}$/, 'ID utilisateur invalide')
+});
 
 @controller('/users')
 @injectable()
-export class UserController {
+export class UserController extends BaseHttpController {
   constructor(
-    @inject(TYPES.UserService) private userService: UserService
-  ) {}
+    @inject(TYPES.UserService) private readonly userService: UserService
+  ) {
+    super();
+  }
 
   @httpPost('/', validate(createUserSchema))
-  async createUser(
-    @request() req: Request, 
-    @response() res: Response, 
-    @next() next: NextFunction
-  ) {
+  private async createUser(
+    @requestBody() body: CreateUserDto
+  ): Promise<Response> {
+    const { response: res } = this.httpContext;
+    
     try {
-      const user = await this.userService.createUser(req.body);
+      const user = await this.userService.createUser(body);
       logger.info(`Utilisateur créé avec succès: ${user.id}`);
       
-      res.status(201).json({
+      return res.status(201).json({
         status: 'success',
-        data: user,
+        data: user
       });
-    } catch (error) {
-      if ((error as any).code === 11000) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      logger.error('Erreur lors de la création de l\'utilisateur:', error);
+      
+      const mongoError = error as MongoError;
+      if (mongoError.code === 11000) {
         return res.status(409).json({
           status: 'error',
           message: 'Un utilisateur avec cet email existe déjà',
         });
       }
-      next(error);
+      
+      return res.status(400).json({
+        status: 'error',
+        message: 'Erreur lors de la création de l\'utilisateur',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      });
     }
   }
-
   @httpGet('/', authMiddleware([UserRole.ADMIN]))
-  async getUsers(
-    @request() req: Request, 
-    @response() res: Response, 
-    @next() next: NextFunction
-  ) {
+  private async getUsers(): Promise<Response> {
+    const { request: req, response: res } = this.httpContext;
+    
     try {
-      const { page = 1, limit = 10, role, search, sort } = req.query;
+      const { page = '1', limit = '10', role, search, sort } = req.query;
       
       const result = await this.userService.getUsers({
         page: Number(page),
         limit: Number(limit),
-        role: role as UserRole,
-        search: search as string,
-        sort: sort as string
+        role: role as UserRole | undefined,
+        search: search as string | undefined,
+        sort: sort as string | undefined
       });
       
-      res.json({
+      // Vérifier que le résultat correspond à l'interface attendue
+      if (!result || typeof result !== 'object' || 
+          !('data' in result) || !Array.isArray(result.data) ||
+          !('total' in result) || typeof result.total !== 'number' || 
+          !('page' in result) || typeof result.page !== 'number' || 
+          !('limit' in result) || typeof result.limit !== 'number') {
+        throw new Error('Format de réponse du service utilisateur invalide');
+      }
+      
+      const paginatedResult = result as PaginatedResponse<unknown>;
+      
+      return res.json({
         status: 'success',
-        data: result.data,
+        data: paginatedResult.data,
         pagination: {
-          total: result.total,
-          page: result.page,
-          totalPages: result.totalPages,
-          limit: result.limit
+          total: paginatedResult.total,
+          page: paginatedResult.page,
+          totalPages: Math.ceil(paginatedResult.total / paginatedResult.limit),
+          limit: paginatedResult.limit
         }
       });
-    } catch (error) {
-      logger.error('Erreur lors de la récupération des utilisateurs:', error);
-      next(error);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      logger.error(`Erreur lors de la récupération des utilisateurs: ${errorMessage}`);
+      
+      return res.status(500).json({
+        status: 'error',
+        message: 'Erreur lors de la récupération des utilisateurs',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      });
     }
   }
 
-  @httpGet('/:id', validate(idParamSchema))
-  async getUserById(
-    @requestParam('id') id: string,
-    @request() req: Request,
-    @response() res: Response,
-    @next() next: NextFunction
-  ) {
+  @httpGet(
+    '/:id',
+    validate(idParamSchema),
+    authMiddleware([UserRole.ADMIN, UserRole.DELIVERY_PERSON, UserRole.CUSTOMER])
+  )
+  private async getUser(
+    @requestParam('id') id: string
+  ): Promise<Response> {
+    const { request: req, response: res } = this.httpContext;
+    
     try {
       const user = await this.userService.getUserById(id);
       
@@ -111,21 +155,27 @@ export class UserController {
       }
       
       // Vérifier si l'utilisateur a le droit de voir ce profil
-      const currentUser = (req as any).user;
-      if (currentUser.role !== UserRole.ADMIN && currentUser.id !== id) {
+      const currentUser = req.user as { id: string; role: UserRole } | undefined;
+      if (currentUser?.role !== UserRole.ADMIN && currentUser?.id !== id) {
         return res.status(403).json({
           status: 'error',
           message: 'Non autorisé à accéder à cette ressource',
         });
       }
       
-      res.json({
+      return res.json({
         status: 'success',
-        data: user,
+        data: user
       });
-    } catch (error) {
-      logger.error(`Erreur lors de la récupération de l'utilisateur ${id}:`, error);
-      next(error);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      logger.error(`Erreur lors de la récupération de l'utilisateur: ${errorMessage}`);
+      
+      return res.status(500).json({
+        status: 'error',
+        message: 'Erreur lors de la récupération de l\'utilisateur',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      });
     }
   }
 
@@ -135,59 +185,71 @@ export class UserController {
     validate(updateUserSchema),
     authMiddleware([UserRole.ADMIN, UserRole.DELIVERY_PERSON, UserRole.CUSTOMER])
   )
-  async updateUser(
+  private async updateUser(
     @requestParam('id') id: string,
-    @request() req: Request,
-    @response() res: Response,
-    @next() next: NextFunction
-  ) {
+    @requestBody() body: UpdateUserDto
+  ): Promise<Response> {
+    const { request: req, response: res } = this.httpContext;
+    
     try {
-      const currentUser = (req as any).user;
-      
-      // Vérifier les autorisations
-      if (currentUser.role !== UserRole.ADMIN && currentUser.id !== id) {
+      // Vérifier si l'utilisateur a le droit de modifier ce profil
+      const currentUser = req.user as { id: string; role: UserRole } | undefined;
+      if (currentUser?.role !== UserRole.ADMIN && currentUser?.id !== id) {
         return res.status(403).json({
           status: 'error',
           message: 'Non autorisé à modifier cet utilisateur',
         });
       }
       
-      // Les clients ne peuvent pas modifier leur rôle
-      if (currentUser.role === UserRole.CUSTOMER && req.body.role) {
-        delete req.body.role;
-      }
+      const updatedUser = await this.userService.updateUser(id, body);
       
-      const user = await this.userService.updateUser(id, req.body);
-      
-      if (!user) {
+      if (!updatedUser) {
         return res.status(404).json({
           status: 'error',
           message: 'Utilisateur non trouvé',
         });
       }
       
-      logger.info(`Utilisateur mis à jour: ${id}`);
+      logger.info(`Utilisateur mis à jour avec succès: ${id}`);
       
-      res.json({
+      return res.json({
         status: 'success',
-        data: user,
+        data: updatedUser,
       });
-    } catch (error) {
-      logger.error(`Erreur lors de la mise à jour de l'utilisateur ${id}:`, error);
-      next(error);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      logger.error(`Erreur lors de la mise à jour de l'utilisateur: ${errorMessage}`);
+      
+      const mongoError = error as MongoError;
+      if (mongoError.code === 11000) {
+        return res.status(409).json({
+          status: 'error',
+          message: 'Un utilisateur avec cet email existe déjà',
+        });
+      }
+      
+      return res.status(500).json({
+        status: 'error',
+        message: 'Erreur lors de la mise à jour de l\'utilisateur',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      });
     }
   }
 
-  @httpDelete('/:id', validate(idParamSchema), authMiddleware([UserRole.ADMIN]))
-  async deleteUser(
-    @requestParam('id') id: string,
-    @request() req: Request,
-    @response() res: Response,
-    @next() next: NextFunction
-  ) {
+  @httpDelete(
+    '/:id',
+    validate(idParamSchema),
+    authMiddleware([UserRole.ADMIN])
+  )
+  private async deleteUser(
+    @requestParam('id') id: string
+  ): Promise<Response> {
+    const { request: req, response: res } = this.httpContext;
+    
     try {
       // Empêcher l'auto-suppression
-      if ((req as any).user.id === id) {
+      const currentUser = req.user as { id: string; role: UserRole } | undefined;
+      if (currentUser?.id === id) {
         return res.status(400).json({
           status: 'error',
           message: 'Vous ne pouvez pas supprimer votre propre compte',
@@ -205,10 +267,16 @@ export class UserController {
       
       logger.info(`Utilisateur désactivé: ${id}`);
       
-      res.status(204).send();
-    } catch (error) {
-      logger.error(`Erreur lors de la suppression de l'utilisateur ${id}:`, error);
-      next(error);
+      return res.status(204).send();
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      logger.error(`Erreur lors de la suppression de l'utilisateur:`, error);
+      
+      return res.status(500).json({
+        status: 'error',
+        message: 'Erreur lors de la suppression de l\'utilisateur',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      });
     }
   }
 }
