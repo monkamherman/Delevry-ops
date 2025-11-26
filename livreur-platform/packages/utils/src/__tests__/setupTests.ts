@@ -12,23 +12,28 @@ const localStorageMock = {
   setItem: jest.fn(),
   removeItem: jest.fn(),
   clear: jest.fn(),
+  key: jest.fn(),
+  length: 0,
 };
-global.localStorage = localStorageMock as any;
 
 // Configuration de Jest pour les tests asynchrones
 jest.setTimeout(10000); // 10 secondes de timeout par défaut
 
-// Fonctions utilitaires pour les tests
+// Déclaration des types globaux
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace NodeJS {
-    interface Global {
-      localStorage: {
-        getItem: (key: string) => string | null;
-        setItem: (key: string, value: string) => void;
-        removeItem: (key: string) => void;
-        clear: () => void;
-      };
-    }
-  }
+  // eslint-disable-next-line no-var
+  var localStorage: {
+    getItem: (key: string) => string | null;
+    setItem: (key: string, value: string) => void;
+    removeItem: (key: string) => void;
+    clear: () => void;
+    key: (index: number) => string | null;
+    length: number;
+  };
 }
+
+// Assignation du mock à global.localStorage
+Object.defineProperty(global, 'localStorage', {
+  value: localStorageMock,
+  writable: true,
+});

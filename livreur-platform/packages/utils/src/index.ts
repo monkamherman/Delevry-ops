@@ -8,4 +8,11 @@ export * from './geolocation';
 export * from './date';
 
 // Export des utilitaires de validation
-export * from './validation';
+import * as validators from './validation/validators';
+export { validators };
+
+// Export des utilitaires de collection
+export * from './collection';
+
+// Export des utilitaires de validation spécifiques
+export { validatePosition } from './validation';

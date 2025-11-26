@@ -150,12 +150,20 @@ function isValidPosition(position) {
     const latValid = position.latitude >= -90 && position.latitude <= 90;
     const lngValid = position.longitude >= -180 && position.longitude <= 180;
     // Vérification optionnelle du timestamp
-    const timeValid = position.timestamp === undefined ||
-        (position.timestamp !== null &&
-            typeof position.timestamp === 'object' &&
-            'getTime' in position.timestamp &&
-            !isNaN(position.timestamp.getTime()));
-    return latValid && lngValid && Boolean(timeValid);
+    let timeValid = true;
+    if (position.timestamp !== undefined && position.timestamp !== null) {
+        try {
+            // Gère à la fois les chaînes ISO et les objets Date
+            const date = typeof position.timestamp === 'string'
+                ? new Date(position.timestamp)
+                : position.timestamp;
+            timeValid = !isNaN(date.getTime());
+        }
+        catch (e) {
+            timeValid = false;
+        }
+    }
+    return latValid && lngValid && timeValid;
 }
 /**
  * Calcule le point médian (centroïde) entre plusieurs positions géographiques.

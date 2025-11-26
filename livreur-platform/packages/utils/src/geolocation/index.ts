@@ -165,13 +165,21 @@ export function isValidPosition(position: Position): boolean {
   const lngValid = position.longitude >= -180 && position.longitude <= 180;
   
   // Vérification optionnelle du timestamp
-  const timeValid = position.timestamp === undefined ||
-                  (position.timestamp !== null && 
-                   typeof position.timestamp === 'object' &&
-                   'getTime' in position.timestamp &&
-                   !isNaN((position.timestamp as Date).getTime()));
+  let timeValid = true;
+  if (position.timestamp !== undefined && position.timestamp !== null) {
+    try {
+      // Gère à la fois les chaînes ISO et les objets Date
+      const date = typeof position.timestamp === 'string' 
+        ? new Date(position.timestamp)
+        : position.timestamp;
+      
+      timeValid = !isNaN(date.getTime());
+    } catch (e) {
+      timeValid = false;
+    }
+  }
 
-  return latValid && lngValid && Boolean(timeValid);
+  return latValid && lngValid && timeValid;
 }
 
 /**
