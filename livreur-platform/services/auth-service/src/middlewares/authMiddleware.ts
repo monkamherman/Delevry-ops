@@ -1,27 +1,24 @@
 import { NextFunction, Request, Response } from "express";
+import Redis from "ioredis";
 import { verify } from "jsonwebtoken";
-import { redisClient } from "../config/database";
-import { UserRole } from "../domain/models/user.model";
-import logger from "../infrastructure/logging/logger";
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        email: string;
-        role: UserRole;
-      };
-    }
-  }
+export enum UserRole {
+  ADMIN = "ADMIN",
+  DELIVERY_PERSON = "DELIVERY_PERSON",
+  CUSTOMER = "CUSTOMER",
 }
+
+// Initialisation vraie instance Redis
+const redisClient = new Redis({
+  host: process.env.REDIS_HOST || "localhost",
+  port: Number(process.env.REDIS_PORT) || 6379,
+  password: process.env.REDIS_PASSWORD || undefined,
+});
 
 export const authMiddleware = (roles: UserRole[] = []) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Vérifier si le token est présent dans les en-têtes
       const authHeader = req.headers.authorization;
-
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).json({
           status: "error",
@@ -30,7 +27,6 @@ export const authMiddleware = (roles: UserRole[] = []) => {
       }
 
       const token = authHeader.split(" ")[1];
-
       if (!token) {
         return res.status(401).json({
           status: "error",
@@ -38,9 +34,7 @@ export const authMiddleware = (roles: UserRole[] = []) => {
         });
       }
 
-      // Vérifier si le token est dans la liste noire (déconnexion)
       const isBlacklisted = await redisClient.get(`blacklist:${token}`);
-
       if (isBlacklisted) {
         return res.status(401).json({
           status: "error",
@@ -48,7 +42,6 @@ export const authMiddleware = (roles: UserRole[] = []) => {
         });
       }
 
-      // Vérifier et décoder le token
       const decoded = verify(token, process.env.JWT_SECRET!) as {
         id: string;
         email: string;
@@ -57,7 +50,6 @@ export const authMiddleware = (roles: UserRole[] = []) => {
         exp: number;
       };
 
-      // Vérifier les rôles si spécifiés
       if (roles.length > 0 && !roles.includes(decoded.role)) {
         return res.status(403).json({
           status: "error",
@@ -65,7 +57,6 @@ export const authMiddleware = (roles: UserRole[] = []) => {
         });
       }
 
-      // Ajouter les informations de l'utilisateur à la requête
       req.user = {
         id: decoded.id,
         email: decoded.email,
@@ -74,8 +65,7 @@ export const authMiddleware = (roles: UserRole[] = []) => {
 
       next();
     } catch (error) {
-      logger.error("Erreur d'authentification:", error);
-
+      console.error("Erreur d'authentification:", error);
       if (error.name === "TokenExpiredError") {
         return res.status(401).json({
           status: "error",
@@ -83,44 +73,10 @@ export const authMiddleware = (roles: UserRole[] = []) => {
         });
       }
 
-      if (error.name === "JsonWebTokenError") {
-        return res.status(401).json({
-          status: "error",
-          message: "Token invalide. Veuillez vous reconnecter.",
-        });
-      }
-
-      next(error);
-    }
-  };
-};
-
-// Middleware pour vérifier la propriété (l'utilisateur ne peut accéder qu'à ses propres données)
-export const checkOwnership = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { id } = req.params;
-
-    if (!req.user) {
       return res.status(401).json({
         status: "error",
-        message: "Authentification requise",
+        message: "Authentification invalide.",
       });
     }
-
-    // L'admin peut tout faire, les autres utilisateurs ne peuvent accéder qu'à leurs propres données
-    if (req.user.role !== UserRole.ADMIN && req.user.id !== id) {
-      return res.status(403).json({
-        status: "error",
-        message: "Accès non autorisé à cette ressource",
-      });
-    }
-
-    next();
-  } catch (error) {
-    next(error);
-  }
+  };
 };
