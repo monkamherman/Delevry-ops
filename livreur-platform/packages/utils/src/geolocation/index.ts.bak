@@ -160,7 +160,6 @@ export function isValidPosition(position: Position): boolean {
       isNaN(position.longitude)) {
     return false;
   }
-  
   // Vérification des plages
   const latValid = position.latitude >= -90 && position.latitude <= 90;
   const lngValid = position.longitude >= -180 && position.longitude <= 180;
@@ -179,18 +178,6 @@ export function isValidPosition(position: Position): boolean {
       timeValid = false;
     }
   }
-  
-  return latValid && lngValid && timeValid;
-}
-
-/**
- * Calcule le point médian (centroïde) entre plusieurs positions géographiques.
- * 
- * @example
- * ```typescript
- * const positions = [
- *   { latitude: 48.8566, longitude: 2.3522, timestamp: new Date() }, // Paris
- *   { latitude: 45.7640, longitude: 4.8357, timestamp: new Date() }, // Lyon
  *   { latitude: 43.2965, longitude: 5.3698, timestamp: new Date() }  // Marseille
  * ];
  * 
@@ -297,6 +284,3 @@ export function calculateWeightedMidpoint(positions: Position[]): Position | nul
     timestamp: new Date().toISOString()
   };
 }
-
-// Export des fonctions de bounding box
-export * from './boundingBox';

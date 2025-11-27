@@ -1,6 +1,8 @@
 import { format, formatDistanceToNow, isToday, isYesterday, parseISO, differenceInMinutes } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
+export { addBusinessDays, isBusinessDay, getBusinessHoursBetween } from './businessDays';
+
 /**
  * Formate une date en chaîne de caractères lisible
  * @param date Date à formater (Date, chaîne ou timestamp)
