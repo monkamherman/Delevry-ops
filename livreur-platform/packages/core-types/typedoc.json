@@ -1,0 +1,18 @@
+{
+  "entryPoints": ["./src/index.ts"],
+  "out": "docs",
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "hideGenerator": true,
+  "includeVersion": true,
+  "categorizeByGroup": true,
+  "categoryOrder": [
+    "Models",
+    "Enums",
+    "Interfaces",
+    "Types"
+  ],
+  "sort": ["source-order", "alphabetical"],
+  "theme": "default"
+}
