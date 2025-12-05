@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@livreur/*": ["packages/*/src"],
+      "@services/*": ["services/*/src"],
+      "@apps/*": ["apps/*/src"]
+    }
+  },
+  "include": ["packages/**/*", "services/**/*", "apps/**/*"],
+  "exclude": ["node_modules", "dist", "build", "**/*.test.ts", "**/*.spec.ts"]
+}

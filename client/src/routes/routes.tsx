@@ -45,6 +45,16 @@ const Router = createBrowserRouter([
 						path: '/deliveries',
 						element: <DynamicPageLoader pageKey="deliveries/DeliveriesPage" />
 					},
+					// Page de suivi des livraisons
+					{
+						path: '/tracking/:deliveryId',
+						element: <DynamicPageLoader pageKey="deliveries/DeliveryTrackingPage" />
+					},
+					// Alias pour la compatibilité avec les anciens liens
+					{
+						path: '/deliveries/:deliveryId/track',
+						element: <DynamicPageLoader pageKey="deliveries/DeliveryTrackingPage" />
+					},
 
 					// Authentication routes part
 					// authRoutes,

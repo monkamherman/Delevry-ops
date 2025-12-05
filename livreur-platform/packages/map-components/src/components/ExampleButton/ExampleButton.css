@@ -1,0 +1,35 @@
+.example-button {
+  font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-weight: 700;
+  border: 0;
+  border-radius: 3em;
+  cursor: pointer;
+  display: inline-block;
+  line-height: 1;
+  color: white;
+  transition: all 0.2s ease-in-out;
+}
+
+.example-button.small {
+  font-size: 12px;
+  padding: 10px 16px;
+}
+
+.example-button.medium {
+  font-size: 14px;
+  padding: 11px 20px;
+}
+
+.example-button.large {
+  font-size: 16px;
+  padding: 12px 24px;
+}
+
+.example-button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.example-button:active {
+  transform: translateY(0);
+}
