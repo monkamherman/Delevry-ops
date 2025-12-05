@@ -1,18 +1,28 @@
-import { Position, PositionWithId } from '@livreur/core-types';
+import { Position, PositionWithId } from "@livreur/core-types";
+import { OptimizedRoute } from "@livreur/core-types/models/optimized-route";
+
+export interface RouteOptimizerOptions {
+  profile: string;
+  units: string;
+  useCache: boolean;
+  cacheTtl: number;
+}
 
 /**
  * Vérifie si une position est valide
  * @param position Position à valider
  * @returns true si la position est valide
  */
-export function isValidPosition(position: Partial<Position>): position is Position {
+export function isValidPosition(
+  position: Partial<Position>
+): position is Position {
   return (
-    typeof position.lat === 'number' &&
-    typeof position.lng === 'number' &&
-    position.lat >= -90 &&
-    position.lat <= 90 &&
-    position.lng >= -180 &&
-    position.lng <= 180
+    typeof position.latitude === "number" &&
+    typeof position.longitude === "number" &&
+    position.latitude >= -90 &&
+    position.latitude <= 90 &&
+    position.longitude >= -180 &&
+    position.longitude <= 180
   );
 }
 
@@ -40,9 +50,9 @@ export function isValidRoute(route: any): route is OptimizedRoute {
     route &&
     Array.isArray(route.waypoints) &&
     route.waypoints.every(isValidPosition) &&
-    typeof route.distance === 'number' &&
-    typeof route.duration === 'number' &&
-    typeof route.geometry === 'string' &&
+    typeof route.distance === "number" &&
+    typeof route.duration === "number" &&
+    typeof route.geometry === "string" &&
     Array.isArray(route.steps)
   );
 }
@@ -56,8 +66,8 @@ export function validateOptimizationOptions(
   options?: Partial<RouteOptimizerOptions>
 ): RouteOptimizerOptions {
   const defaultOptions: RouteOptimizerOptions = {
-    profile: 'car',
-    units: 'km',
+    profile: "car",
+    units: "km",
     useCache: true,
     cacheTtl: 3600, // 1 heure par défaut
   };
