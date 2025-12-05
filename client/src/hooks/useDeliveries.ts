@@ -17,7 +17,8 @@ export const DELIVERIES_QUERY_KEY = 'deliveries';
 
 // Fonction pour récupérer les livraisons
 const fetchDeliveries = async (): Promise<Delivery[]> => {
-  const { data } = await axios.get<Delivery[]>('http://localhost:4000/api/deliveries');
+  // Utilisation du proxy configuré dans vite.config.ts
+  const { data } = await axios.get<Delivery[]>('/api/deliveries');
   return data;
 };
 

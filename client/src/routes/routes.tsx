@@ -1,10 +1,9 @@
-import { createBrowserRouter, Outlet } from 'react-router-dom'
-import Navbar from '@/layouts/navbar/Header'
-import Footer from '@/layouts/footer/Footer'
+import { createBrowserRouter, Outlet } from 'react-router-dom';
+import MainLayout from '@/layouts/MainLayout';
 // import authRoutes from './routes-config/authRoutes'
-// import ScrollProgress from '@/components/ui/scroll-progress'
-import ScrollToTop from '@/components/ui/ScrollToTop'
-import DynamicPageLoader from '@/components/ui/LazyCompoment'
+// import ScrollProgress from '@/components/ui/scroll-progress';
+import ScrollToTop from '@/components/ui/ScrollToTop';
+import DynamicPageLoader from '@/components/ui/LazyCompoment';
 
 /**
  * Creates a router with specified routes and elements for each route.
@@ -30,19 +29,22 @@ const Router = createBrowserRouter([
 		children: [
 			{
 				path: '/',
-				element: <>
-					<Navbar />
-					<div className='min-h-[80vh]'>
+				element: (
+					<MainLayout>
 						<Outlet />
-					</div>
-					<Footer />
-				</>,
+					</MainLayout>
+				),
 				children: [
 					{
 						path: '/',
 						element: <DynamicPageLoader pageKey="home/Home" />
 					},
 
+					// Page des livraisons
+					{
+						path: '/deliveries',
+						element: <DynamicPageLoader pageKey="deliveries/DeliveriesPage" />
+					},
 
 					// Authentication routes part
 					// authRoutes,
