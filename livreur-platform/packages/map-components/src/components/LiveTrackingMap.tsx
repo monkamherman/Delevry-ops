@@ -8,46 +8,88 @@ import DeliveryMarkers from './DeliveryMarkers';
 import RoutePolyline from './RoutePolyline';
 import { MapControls } from './MapControls';
 
-// Correction pour les icônes manquantes dans Leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
-});
+// Configuration des icônes par défaut de Leaflet
+const configureLeafletIcons = () => {
+  try {
+    // @ts-ignore - La propriété _getIconUrl est interne à Leaflet
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+      iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+      shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+    });
+  } catch (error) {
+    console.error('Erreur lors de la configuration des icônes Leaflet :', error);
+  }
+};
 
+// Configurer les icônes au chargement du module
+configureLeafletIcons();
+
+/**
+ * Propriétés du composant LiveTrackingMap
+ */
 interface LiveTrackingMapProps {
-  /** Position centrale de la carte [lat, lng] */
+  /** 
+   * Position centrale initiale de la carte [latitude, longitude]
+   * @example [48.8566, 2.3522] pour Paris
+   */
   center: [number, number];
   
-  /** Niveau de zoom initial */
+  /** 
+   * Niveau de zoom initial de la carte
+   * @default 13
+   */
   zoom?: number;
   
-  /** Liste des livraisons à afficher */
+  /** 
+   * Liste des livraisons à afficher sur la carte
+   */
   deliveries?: Delivery[];
   
-  /** Liste des livreurs à afficher */
+  /** 
+   * Liste des livreurs à suivre sur la carte
+   */
   livreurs?: Livreur[];
   
-  /** Itinéraires à afficher */
+  /** 
+   * Itinéraires à afficher sur la carte
+   */
   routes?: Route[];
   
-  /** Fonction appelée lorsque la position de la carte change */
+  /** 
+   * Fonction appelée lorsque la position de la vue de la carte change
+   * @param position - La nouvelle position du centre de la carte
+   */
   onPositionUpdate?: (position: Position) => void;
   
-  /** Fonction appelée lors d'un clic sur une livraison */
+  /** 
+   * Fonction appelée lors d'un clic sur un marqueur de livraison
+   * @param delivery - La livraison cliquée
+   */
   onDeliveryClick?: (delivery: Delivery) => void;
   
-  /** Fonction appelée lors d'un clic sur un livreur */
+  /** 
+   * Fonction appelée lors d'un clic sur un marqueur de livreur
+   * @param livreur - Le livreur cliqué
+   */
   onLivreurClick?: (livreur: Livreur) => void;
   
-  /** Fonction appelée lors d'un clic sur un itinéraire */
+  /** 
+   * Fonction appelée lors d'un clic sur un itinéraire
+   * @param route - L'itinéraire cliqué
+   */
   onRouteClick?: (route: Route) => void;
   
-  /** Classe CSS personnalisée */
+  /** 
+   * Classe CSS personnalisée pour le conteneur de la carte
+   */
   className?: string;
   
-  /** Styles CSS personnalisés */
+  /** 
+   * Styles CSS personnalisés pour le conteneur de la carte
+   * @default { height: '100%', width: '100%' }
+   */
   style?: React.CSSProperties;
   
   /** Composants enfants à afficher sur la carte */
@@ -187,30 +229,40 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
     []
   );
 
-  // Mettre à jour la vue lorsque le centre ou le zoom changent
+    // Mettre à jour la vue lorsque le centre ou le zoom changent
   useEffect(() => {
-    if (mapRef.current) {
+    if (!mapRef.current) return;
+    
+    try {
       mapRef.current.flyTo(center, zoom, {
         duration: 1,
+        noMoveStart: true, // Évite de déclencher l'événement movestart
       });
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de la vue de la carte :', error);
     }
   }, [center, zoom]);
 
-  // Nettoyage des écouteurs d'événements lors du démontage
+  // Gestion des clics sur la carte et nettoyage
   useEffect(() => {
     const currentMap = mapRef.current;
-    const clickHandler = (e: L.LeafletMouseEvent) => {
-      console.log('Clic sur la carte à :', e.latlng);
+    if (!currentMap) return;
+
+    const handleMapClick = (e: L.LeafletMouseEvent) => {
+      try {
+        console.log('Clic sur la carte à :', e.latlng);
+        // Ici vous pouvez ajouter une logique pour ajouter des marqueurs, etc.
+      } catch (error) {
+        console.error('Erreur lors du traitement du clic sur la carte :', error);
+      }
     };
     
-    if (currentMap) {
-      currentMap.on('click', clickHandler);
-    }
+    // S'abonner à l'événement de clic
+    currentMap.on('click', handleMapClick);
     
+    // Nettoyage lors du démontage du composant
     return () => {
-      if (currentMap) {
-        currentMap.off('click', clickHandler);
-      }
+      currentMap.off('click', handleMapClick);
     };
   }, []);
 
@@ -249,30 +301,52 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
     ));
   }, [routes, onRouteClick]);
 
+  // Rendu du composant
   return (
     <div 
       className={`live-tracking-map ${className}`} 
       style={style}
       data-testid="live-tracking-map"
+      aria-label="Carte de suivi en temps réel"
     >
       <MapContainer
         center={center}
         zoom={zoom}
-        style={{ height: '100%', width: '100%' }}
+        style={{ 
+          height: '100%', 
+          width: '100%',
+          minHeight: '300px', // Hauteur minimale pour une meilleure expérience utilisateur
+        }}
         ref={(mapInstance: L.Map | null) => {
-          // Utiliser une fonction de rappel pour définir la référence
-          if (mapInstance) {
-            (mapRef as React.MutableRefObject<L.Map | null>).current = mapInstance;
+          try {
+            if (mapInstance) {
+              (mapRef as React.MutableRefObject<L.Map | null>).current = mapInstance;
+              
+              // Stocker une référence directe à l'instance de carte pour un accès facile
+              // depuis la console du navigateur (débogage)
+              if (process.env.NODE_ENV === 'development') {
+                // @ts-ignore - Pour le débogage uniquement
+                window.leafletMap = mapInstance;
+              }
+            }
+          } catch (error) {
+            console.error('Erreur lors de l\'initialisation de la carte :', error);
           }
         }}
         minZoom={minZoom}
         maxZoom={maxZoom}
         maxBounds={maxBounds}
-        zoomControl={false} // Désactiver le contrôle de zoom par défaut
+        zoomControl={false} // Désactiver le contrôle de zoom par défaut (nous utilisons le nôtre)
         scrollWheelZoom={scrollWheelZoom}
         whenReady={() => {
-          // Effectuer des opérations d'initialisation ici si nécessaire
-          console.log('La carte est prête');
+          // Cette fonction est appelée lorsque la carte est entièrement initialisée
+          try {
+            if (process.env.NODE_ENV !== 'production') {
+              console.log('LiveTrackingMap prêt');
+            }
+          } catch (error) {
+            console.error('Erreur lors de l\'initialisation de la carte :', error);
+          }
         }}
       >
         <TileLayer
@@ -316,4 +390,21 @@ const LiveTrackingMap: React.FC<LiveTrackingMapProps> = ({
 const MemoizedLiveTrackingMap = memo(LiveTrackingMap);
 MemoizedLiveTrackingMap.displayName = 'LiveTrackingMap';
 
-export default MemoizedLiveTrackingMap;
+// Exporter le composant mémoïsé avec son nom d'affichage pour le débogage
+const ExportedLiveTrackingMap = Object.assign(MemoizedLiveTrackingMap, {
+  displayName: 'LiveTrackingMap',
+  // Propriétés statiques utiles
+  defaultProps: {
+    zoom: 13,
+    deliveries: [],
+    livreurs: [],
+    routes: [],
+    showControls: true,
+    showLocateMe: true,
+    showZoomControls: true,
+    showResetView: true,
+    scrollWheelZoom: true,
+  },
+});
+
+export default ExportedLiveTrackingMap;
