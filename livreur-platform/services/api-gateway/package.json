@@ -53,6 +53,7 @@
     "express-cache-controller": "^1.1.0",
     "express-rate-limit": "^7.3.1",
     "helmet": "^8.0.0",
+    "http-status-codes": "2.3.0",
     "inversify": "^7.1.1",
     "inversify-express-utils": "^6.5.0",
     "jsonwebtoken": "^9.0.2",

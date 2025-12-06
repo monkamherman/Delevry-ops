@@ -1,14 +1,15 @@
 /// <reference types="node" />
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaConfig } from "@prisma/client";
 
-const prisma = new PrismaClient({
-  // Configuration de la connexion à la base de données via l'URL d'environnement
+const config: PrismaConfig = {
   datasources: {
     db: {
-      url: process.env.DATABASE_URL,
+      url:
+        process.env.DATABASE_URL ||
+        "mongodb://localhost:27017/livreur-platform",
     },
   },
-});
+};
 
-export default prisma;
+export default config;
