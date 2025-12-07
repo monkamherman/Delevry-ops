@@ -10,11 +10,72 @@ generator client {
 
 datasource db {
   provider = "mongodb"
-  url      = env("DATABASE_URL")
 }
 
+model User {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  phoneNumber String?
+  role        UserRole @default(CUSTOMER)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-model users {
-  id     String @id @default(auto()) @map("_id") @db.ObjectId
-  name String
+  // Relations
+  createdDeliveries  Delivery[] @relation("ClientDeliveries")
+  assignedDeliveries Delivery[] @relation("LivreurDeliveries")
+
+  @@map("users")
+}
+
+model Delivery {
+  id                String           @id @default(auto()) @map("_id") @db.ObjectId
+  clientId          String           @db.ObjectId
+  livreurId         String?          @db.ObjectId
+  status            DeliveryStatus   @default(PENDING)
+  priority          DeliveryPriority @default(NORMAL)
+  addresses         Json // Array<Address>
+  packageInfo       Json? // PackageInfo
+  timeWindow        Json? // TimeWindow
+  optimizedRoute    Json? // OptimizedRoute
+  estimatedDuration Float?
+  actualDuration    Float?
+  notes             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  assignedAt        DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  cancelledAt       DateTime?
+
+  // Relations
+  client  User  @relation("ClientDeliveries", fields: [clientId], references: [id])
+  livreur User? @relation("LivreurDeliveries", fields: [livreurId], references: [id])
+
+  @@map("deliveries")
+}
+
+enum UserRole {
+  ADMIN
+  DELIVERY_PERSON
+  CUSTOMER
+}
+
+enum DeliveryStatus {
+  PENDING
+  ASSIGNED
+  IN_PROGRESS
+  DELIVERED
+  CANCELLED
+  FAILED
+}
+
+enum DeliveryPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
 }
